@@ -2,8 +2,8 @@ name: Weekly BOSS Update
 
 on:
   schedule:
-    # 每周日凌晨 00:30 北京时间 (UTC 16:30 周六)
-    - cron: '30 16 * * 6'
+    # 每周日凌晨 01:30 北京时间 (UTC 17:30 周六)
+    - cron: '30 17 * * 6'
   workflow_dispatch: # 支持手动触发
 
 jobs:
@@ -34,7 +34,7 @@ jobs:
         with:
           src: github/${{ github.repository_owner }}
           dst: gitee/${{ secrets.GITEE_USERNAME }}
-          static_list: ${{ github.event.repository.name }}
+          static_list: ${{ github.event.repository.name }}:${{ secrets.GITEE_REPO_NAME || github.event.repository.name }}
           force_update: true
           debug: true
           auth_type: token

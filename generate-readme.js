@@ -164,7 +164,7 @@ function generateReadme() {
         if (!groups[key]) return;
         const names = groups[key].map(b => {
             if (permanentMissedBosses.includes(b.name)) {
-                return `~~${b.name}~~`;
+                return `**[机制] ${b.name}**`;
             }
             return b.name;
         }).join('、');
@@ -190,7 +190,7 @@ ${weekRows.join('\n')}
 
 ${missedText}
 
-> ~~删除线~~ 表示机制类BOSS，正常轮换中不会出现
+> **[机制]** 加粗标记的为机制类BOSS，正常轮换中不会出现
 
 ## 在线查询
 
