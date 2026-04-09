@@ -36,5 +36,5 @@ jobs:
 
       - name: Sync to Gitee
         run: |
-          git remote add gitee https://al1:${{ secrets.GITEE_TOKEN }}@gitee.com/al1/gamedeta.git
+          git remote add gitee https://al1:${{ secrets.GITEE_TOKEN }}@gitee.com/al1/gw2data.git
           git push gitee master --force
