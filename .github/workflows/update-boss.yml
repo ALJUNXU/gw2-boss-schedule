@@ -32,16 +32,13 @@ jobs:
           git diff --cached --quiet || git commit -m "chore: update weekly BOSS schedule $(date +'%Y-%m-%d')"
           git push
 
-      - name: Sync to Gitee
-        if: ${{ secrets.GITEE_USERNAME != '' && secrets.GITEE_TOKEN != '' }}
-        uses: Yikun/hub-mirror-action@master
-        with:
-          src: github/${{ github.repository_owner }}
-          dst: gitee/${{ secrets.GITEE_USERNAME }}
-          static_list: ${{ github.event.repository.name }}:${{ secrets.GITEE_REPO_NAME || github.event.repository.name }}
-          force_update: true
-          debug: true
-          auth_type: token
-          auth_token: ${{ secrets.GITHUB_TOKEN }}
-          gitee_token: ${{ secrets.GITEE_TOKEN }}
-          account_type: user
+      # Gitee 同步步骤 — 配置好 secrets 后取消注释
+      # - name: Sync to Gitee
+      #   uses: Yikun/hub-mirror-action@master
+      #   with:
+      #     src: github/${{ github.repository_owner }}
+      #     dst: gitee/${{ secrets.GITEE_USERNAME }}
+      #     dst_key: ${{ secrets.GITEE_RSA_PRIVATE_KEY }}
+      #     dst_token: ${{ secrets.GITEE_TOKEN }}
+      #     static_list: ${{ github.event.repository.name }}
+      #     force_update: true
