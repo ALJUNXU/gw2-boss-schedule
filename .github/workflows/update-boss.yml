@@ -33,11 +33,6 @@ jobs:
           git push
 
       - name: Sync to Gitee
-        uses: Yikun/hub-mirror-action@master
-        with:
-          src: github/${{ github.repository_owner }}
-          dst: gitee/al1
-          dst_key: ${{ secrets.GITEE_RSA_PRIVATE_KEY }}
-          dst_token: ${{ secrets.GITEE_TOKEN }}
-          static_list: ${{ github.event.repository.name }}
-          force_update: true
+        run: |
+          git remote add gitee https://al1:${{ secrets.GITEE_TOKEN }}@gitee.com/al1/gw2-boss-schedule.git
+          git push gitee master --force
