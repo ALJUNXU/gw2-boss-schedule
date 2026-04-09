@@ -80,6 +80,10 @@ const permanentMissedBosses = [
     "魂河（机制）", "古兰斯三雕像", "沉默的麦克劳德"
 ];
 
+const purpleBosses = [
+    "迪西玛", "格里尔", "厄拉", "守护者林地（齐拉）", "德姆"
+];
+
 // 基准日：2026-03-25 对应 cycleData[0]
 const startDate = new Date(2026, 2, 25); // 本地时区
 
@@ -127,6 +131,9 @@ function generateReadme() {
     const weekBossNames = new Set();
     const weekRows = [];
 
+    const fmtBoss = (name) => purpleBosses.includes(name)
+        ? `<span style="color:#c084fc;font-weight:bold">${name}</span>` : name;
+
     for (let i = 0; i < 7; i++) {
         const d = new Date(sunday);
         d.setDate(sunday.getDate() + i);
@@ -137,7 +144,7 @@ function generateReadme() {
         weekBossNames.add(normalizeBossName(bosses[1]));
         weekBossNames.add(normalizeBossName(bosses[2]));
         weekBossNames.add(normalizeBossName(bosses[3]));
-        weekRows.push(`| ${dateStr} ${weekday} | ${bosses[0]} | ${bosses[1]} | ${bosses[2]} | ${bosses[3]} |`);
+        weekRows.push(`| ${dateStr} ${weekday} | ${fmtBoss(bosses[0])} | ${fmtBoss(bosses[1])} | ${fmtBoss(bosses[2])} | ${fmtBoss(bosses[3])} |`);
     }
 
     // 计算未轮换BOSS
@@ -164,7 +171,10 @@ function generateReadme() {
         if (!groups[key]) return;
         const names = groups[key].map(b => {
             if (permanentMissedBosses.includes(b.name)) {
-                return `**[机制] ${b.name}**`;
+                return `<span style="color:#ff6b35">[机制] ${b.name}</span>`;
+            }
+            if (purpleBosses.includes(b.name)) {
+                return `<span style="color:#c084fc;font-weight:bold">${b.name}</span>`;
             }
             return b.name;
         }).join('、');
@@ -190,7 +200,7 @@ ${weekRows.join('\n')}
 
 ${missedText}
 
-> **[机制]** 加粗标记的为机制类BOSS，正常轮换中不会出现
+> <span style="color:#ff6b35">橙红色</span> 为机制类BOSS（正常轮换中不会出现），<span style="color:#c084fc">紫色</span> 为十人本8线及特殊BOSS
 
 ## 在线查询
 
