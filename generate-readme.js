@@ -132,7 +132,7 @@ function generateReadme() {
     const weekRows = [];
 
     const fmtBoss = (name) => purpleBosses.includes(name)
-        ? `<span style="color:#c084fc;font-weight:bold">${name}</span>` : name;
+        ? `🟣${name}` : name;
 
     for (let i = 0; i < 7; i++) {
         const d = new Date(sunday);
@@ -171,10 +171,10 @@ function generateReadme() {
         if (!groups[key]) return;
         const names = groups[key].map(b => {
             if (permanentMissedBosses.includes(b.name)) {
-                return `<span style="color:#ff6b35">[机制] ${b.name}</span>`;
+                return `🟠[机制] ${b.name}`;
             }
             if (purpleBosses.includes(b.name)) {
-                return `<span style="color:#c084fc;font-weight:bold">${b.name}</span>`;
+                return `🟣${b.name}`;
             }
             return b.name;
         }).join('、');
@@ -200,7 +200,7 @@ ${weekRows.join('\n')}
 
 ${missedText}
 
-> <span style="color:#ff6b35">橙红色</span> 为机制类BOSS（正常轮换中不会出现），<span style="color:#c084fc">紫色</span> 为十人本8线及特殊BOSS
+> 🟠 机制类BOSS（正常轮换中不会出现）| 🟣 十人本8线及特殊BOSS
 
 ## 在线查询
 
