@@ -1,0 +1,408 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>激战2 BOSS轮换查询（自动上周日版）</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft Yahei", sans-serif;
+        }
+        body {
+            background-color: #1a1a2e;
+            color: #fff;
+            padding: 10px;
+            line-height: 1.4;
+            font-size: 14px;
+        }
+        .container {
+            max-width: 760px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: #f0c808;
+            margin-bottom: 10px;
+            font-size: 1.5rem;
+        }
+        .input-area {
+            background-color: #16213e;
+            padding: 10px 12px;
+            border-radius: 5px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        label {
+            font-size: 0.95rem;
+            font-weight: bold;
+        }
+        input[type="date"] {
+            padding: 5px 8px;
+            font-size: 0.95rem;
+            border-radius: 3px;
+            border: none;
+            background-color: #0f3460;
+            color: #fff;
+        }
+        button {
+            padding: 5px 12px;
+            font-size: 0.95rem;
+            border-radius: 3px;
+            border: none;
+            background-color: #e94560;
+            color: #fff;
+            cursor: pointer;
+        }
+        .error {
+            color: #ff4757;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+        .tips {
+            color: #4cd137;
+            font-size: 0.9rem;
+        }
+        h2 {
+            color: #f0c808;
+            margin: 12px 0 6px;
+            font-size: 1.15rem;
+            border-bottom: 1px solid #e94560;
+            padding-bottom: 3px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: #16213e;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-bottom: 12px;
+            font-size: 13px;
+        }
+        th, td {
+            padding: 6px 5px;
+            text-align: center;
+            border-bottom: 1px solid #0f3460;
+            white-space: nowrap;
+        }
+        th {
+            background-color: #0f3460;
+            color: #f0c808;
+            font-size: 0.95rem;
+        }
+        tr {
+            color: #ccc;
+        }
+        tr.today {
+            background-color: #2563eb !important;
+            color: #ffffff !important;
+            font-weight: 700 !important;
+        }
+        tr:hover {
+            background-color: #0f3460;
+        }
+        .missed-section {
+            background-color: #16213e;
+            padding: 10px 12px;
+            border-radius: 5px;
+        }
+
+        /* ✅ 核心修改：同一组横向排列 */
+        .line-group {
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .line-title {
+            color: #f0c808;
+            font-weight: bold;
+            font-size: 0.95rem;
+            white-space: nowrap;
+        }
+        .missed-item-group {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+        .missed-item {
+            background-color: #0f3460;
+            padding: 5px 8px;
+            border-radius: 2px;
+            font-size: 14px;
+            text-align: center;
+            white-space: nowrap;
+        }
+        .permanent-missed {
+            background-color: #2c003e !important;
+            border: 1px solid #ff00ff;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 12px;
+            color: #aaa;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚔️ 激战2 BOSS轮换查询（自动上周日版）</h1>
+
+        <div class="input-area">
+            <label for="sundayDate">起始周日：</label>
+            <input type="date" id="sundayDate">
+            <button onclick="generateSchedule()">生成</button>
+            <span id="errorMsg" class="error"></span>
+            <span id="autoTips" class="tips">✅ 已自动匹配上周日</span>
+        </div>
+
+        <div id="scheduleArea" style="display: none;">
+            <h2>📅 本周轮换日程</h2>
+            <table id="scheduleTable">
+                <thead>
+                    <tr>
+                        <th>日期 星期</th>
+                        <th>BOSS 1</th>
+                        <th>BOSS 2</th>
+                        <th>BOSS 3</th>
+                        <th>BOSS 4</th>
+                    </tr>
+                </thead>
+                <tbody id="scheduleBody"></tbody>
+            </table>
+
+            <h2>❌ 本周未轮换到的BOSS</h2>
+            <div class="missed-section" id="missedContainer"></div>
+        </div>
+
+        <div class="footer">
+            数据基于2026/3/25 周期1，12天循环 | 自动匹配上周日
+        </div>
+    </div>
+
+    <script>
+        const cycleData = [
+            ["席瓦雪山小径", "以太之刃的藏身处", "斯洛萨索", "卡迪姆"],
+            ["亡者之音和亡者之爪", "萨比尔（风灵）", "马蒂亚斯", "无可匹敌卡迪姆"],
+            ["卓玛爪牙法兰涅尔", "卓玛低语", "琦拉", "无魂惧魔"],
+            ["多变藤戈瑟瓦尔", "山谷守护者", "萨玛洛格", "丰收神殿"],
+            ["凯玲", "宇宙观测台", "咒术融合体", "德姆"],
+            ["末世魔监工", "冷战", "孪生蝶翼人", "格里尔"],
+            ["席瓦雪山小径", "骸骨剥皮怪", "迪西玛", "卡迪姆"],
+            ["亡者之音和亡者之爪", "萨蓓莎", "艾迪娜（土灵）", "无可匹敌卡迪姆"],
+            ["卓玛爪牙法兰涅尔", "桑莱废料场", "旧雄狮广场", "无魂惧魔"],
+            ["多变藤戈瑟瓦尔", "菲勃神殿", "厄拉", "丰收神殿"],
+            ["凯玲", "要塞构造体", "凯宁瞭望台", "德姆"],
+            ["末世魔监工", "守护者林地（齐拉）", "戴莫斯", "格里尔"]
+        ];
+
+        const allBosses = [
+            {name: "冷战", type: "进攻本", dlc: "冰巢传说"},
+            {name: "卓玛爪牙法兰涅尔", type: "进攻本", dlc: "冰巢传说"},
+            {name: "席瓦雪山小径", type: "进攻本", dlc: "冰巢传说"},
+            {name: "亡者之音和亡者之爪", type: "进攻本", dlc: "冰巢传说"},
+            {name: "卓玛低语", type: "进攻本", dlc: "冰巢传说"},
+            {name: "骸骨剥皮怪", type: "进攻本", dlc: "冰巢传说"},
+            {name: "以太之刃的藏身处", type: "进攻本", dlc: "巨龙绝境"},
+            {name: "桑莱废料场", type: "进攻本", dlc: "巨龙绝境"},
+            {name: "凯宁瞭望台", type: "进攻本", dlc: "巨龙绝境"},
+            {name: "丰收神殿", type: "进攻本", dlc: "巨龙绝境"},
+            {name: "旧雄狮广场", type: "进攻本", dlc: "巨龙绝境"},
+            {name: "宇宙观测台", type: "进攻本", dlc: "天界之谜"},
+            {name: "菲勃神殿", type: "进攻本", dlc: "天界之谜"},
+            {name: "守护者林地（齐拉）", type: "进攻本", dlc: "永恒愿景"},
+            
+            {name: "山谷守护者", type: "十人本1线", dlc: ""},
+            {name: "多变藤戈瑟瓦尔", type: "十人本1线", dlc: ""},
+            {name: "灵魂树林（站圈拿火把）", type: "十人本1线", dlc: ""},
+            {name: "破坏者萨蓓莎", type: "十人本1线", dlc: ""},
+            
+            {name: "斯洛萨索", type: "十人本2线", dlc: ""},
+            {name: "囚犯集中营", type: "十人本2线", dlc: ""},
+            {name: "马蒂亚斯", type: "十人本2线", dlc: ""},
+            
+            {name: "沉默的麦克劳德", type: "十人本3线", dlc: ""},
+            {name: "要塞构造体", type: "十人本3线", dlc: ""},
+            {name: "穿越扭曲城堡（机制）", type: "十人本3线", dlc: ""},
+            {name: "琦拉", type: "十人本3线", dlc: ""},
+            
+            {name: "不屈的凯玲", type: "十人本4线", dlc: ""},
+            {name: "末世魔监工", type: "十人本4线", dlc: ""},
+            {name: "萨玛洛格", type: "十人本4线", dlc: ""},
+            {name: "戴莫斯", type: "十人本4线", dlc: ""},
+            
+            {name: "无魂惧魔", type: "十人本5线", dlc: ""},
+            {name: "魂河（机制）", type: "十人本5线", dlc: ""},
+            {name: "古兰斯三雕像", type: "十人本5线", dlc: ""},
+            {name: "德姆", type: "十人本5线", dlc: ""},
+            
+            {name: "咒术融合体", type: "十人本6线", dlc: ""},
+            {name: "孪生蝶翼人", type: "十人本6线", dlc: ""},
+            {name: "卡迪姆", type: "十人本6线", dlc: ""},
+            
+            {name: "艾迪娜（土灵）", type: "十人本7线", dlc: ""},
+            {name: "萨比尔（风灵）", type: "十人本7线", dlc: ""},
+            {name: "无可匹敌卡迪姆", type: "十人本7线", dlc: ""},
+            
+            {name: "迪西玛", type: "十人本8线", dlc: ""},
+            {name: "格里尔", type: "十人本8线", dlc: ""},
+            {name: "厄拉", type: "十人本8线", dlc: ""}
+        ];
+
+        const permanentMissedBosses = [
+            "灵魂树林（站圈拿火把）","囚犯集中营","穿越扭曲城堡（机制）",
+            "魂河（机制）","古兰斯三雕像","沉默的麦克劳德"
+        ];
+        
+        const startDate = new Date(2026, 2, 25);
+        const weekMap = ["星期一","星期二","星期三","星期四","星期五","星期六","星期日"];
+
+        function parseLocalDate(str) {
+            const [y, m, d] = str.split('-').map(Number);
+            return new Date(y, m - 1, d);
+        }
+
+        function getCurrentWeekSunday() {
+            const today = new Date();
+            const day = today.getDay();
+            const lastSunday = new Date(today);
+            
+            if (day === 0) {
+                // 今天就是周日，直接用今天
+                lastSunday.setDate(today.getDate());
+            } else {
+                // 不是周日 → 取上周日
+                lastSunday.setDate(today.getDate() - day);
+            }
+            return lastSunday;
+        }
+
+        function formatDateForInput(date) {
+            return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+        }
+
+        function getDailyBosses(targetDate) {
+            const deltaMs = targetDate.getTime() - startDate.getTime();
+            const deltaDays = Math.floor(deltaMs / 86400000);
+            const cycleIndex = (deltaDays + 1200) % 12;
+            return cycleData[cycleIndex];
+        }
+
+        function normalizeBossName(name) {
+            let clean = name.trim();
+            if (clean === "凯玲") return "不屈的凯玲";
+            if (clean === "萨蓓莎") return "破坏者萨蓓莎";
+            return clean;
+        }
+
+        function generateWeekSchedule(sundayDate) {
+            const weekSchedule = [];
+            const weekBossNames = new Set();
+            const today = new Date();
+            const todayStr = `${today.getFullYear()}/${String(today.getMonth()+1).padStart(2,'0')}/${String(today.getDate()).padStart(2,'0')}`;
+
+            for (let i=0;i<7;i++){
+                const d = new Date(sundayDate);
+                d.setDate(sundayDate.getDate()+i);
+                const dateStr = `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
+                const weekday = weekMap[d.getDay()===0?6:d.getDay()-1];
+                const bosses = getDailyBosses(d);
+                weekSchedule.push({
+                    dateWeek: `${dateStr} ${weekday}`, // ✅ 合并
+                    boss1:bosses[0],boss2:bosses[1],boss3:bosses[2],boss4:bosses[3],
+                    isToday:dateStr===todayStr
+                });
+                bosses.forEach(b=>weekBossNames.add(normalizeBossName(b)));
+            }
+
+            const missed = allBosses.filter(b=>{
+                const n = normalizeBossName(b.name);
+                if(permanentMissedBosses.includes(b.name)) return true;
+                return !weekBossNames.has(n);
+            });
+
+            const groups = {};
+            const order = ["进攻本-冰巢传说","进攻本-巨龙绝境","进攻本-天界之谜","进攻本-永恒愿景",
+                           "十人本1线","十人本2线","十人本3线","十人本4线","十人本5线","十人本6线","十人本7线","十人本8线"];
+            missed.forEach(b=>{
+                const key = b.type.includes("十人本") ? b.type : `进攻本-${b.dlc}`;
+                if(!groups[key]) groups[key]=[];
+                groups[key].push(b);
+            });
+
+            return {weekSchedule, groups, order};
+        }
+
+        function generateSchedule(){
+            const ipt = document.getElementById("sundayDate").value;
+            const err = document.getElementById("errorMsg");
+            const area = document.getElementById("scheduleArea");
+            const body = document.getElementById("scheduleBody");
+            const container = document.getElementById("missedContainer");
+            const tips = document.getElementById("autoTips");
+            err.textContent = ""; tips.textContent = "";
+            area.style.display="none"; body.innerHTML=""; container.innerHTML="";
+
+            let sunday;
+            if(ipt){
+                sunday = parseLocalDate(ipt);
+                if(sunday.getDay()!==0){err.textContent="⚠️ 请选周日";return;}
+                tips.textContent="✅ 手动选择";
+            }else{
+                sunday = getCurrentWeekSunday();
+                document.getElementById("sundayDate").value = formatDateForInput(sunday);
+                tips.textContent="✅ 自动匹配："+formatDateForInput(sunday);
+            }
+
+            const {weekSchedule, groups, order} = generateWeekSchedule(sunday);
+            weekSchedule.forEach(day=>{
+                const tr = document.createElement("tr");
+                if(day.isToday) tr.classList.add("today");
+                tr.innerHTML=`<td>${day.dateWeek}</td><td>${day.boss1}</td><td>${day.boss2}</td><td>${day.boss3}</td><td>${day.boss4}</td>`;
+                body.appendChild(tr);
+            });
+
+            order.forEach(key=>{
+                if(!groups[key]) return;
+                const div = document.createElement("div");
+                div.className="line-group";
+
+                const title = document.createElement("div");
+                title.className="line-title";
+                title.textContent=key;
+                div.appendChild(title);
+
+                // ✅ 横向排列容器
+                const group = document.createElement("div");
+                group.className="missed-item-group";
+
+                groups[key].forEach(b=>{
+                    const item = document.createElement("div");
+                    item.className="missed-item";
+                    if(permanentMissedBosses.includes(b.name)) item.classList.add("permanent-missed");
+                    item.innerHTML = `${b.name}`;
+                    group.appendChild(item);
+                });
+
+                div.appendChild(group);
+                container.appendChild(div);
+            });
+            area.style.display="block";
+        }
+
+        window.onload=function(){
+            const sun = getCurrentWeekSunday();
+            document.getElementById("sundayDate").value = formatDateForInput(sun);
+            document.getElementById("autoTips").textContent="✅ 自动匹配："+formatDateForInput(sun);
+            generateSchedule();
+        };
+    </script>
+</body>
+</html>
