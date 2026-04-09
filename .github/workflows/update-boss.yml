@@ -6,6 +6,9 @@ on:
     - cron: '30 17 * * 6'
   workflow_dispatch: # 支持手动触发
 
+permissions:
+  contents: write
+
 jobs:
   update-readme:
     runs-on: ubuntu-latest
@@ -16,7 +19,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
 
       - name: Generate README
         run: node generate-readme.js
@@ -30,6 +33,7 @@ jobs:
           git push
 
       - name: Sync to Gitee
+        if: ${{ secrets.GITEE_USERNAME != '' && secrets.GITEE_TOKEN != '' }}
         uses: Yikun/hub-mirror-action@master
         with:
           src: github/${{ github.repository_owner }}
