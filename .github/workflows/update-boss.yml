@@ -34,5 +34,5 @@ jobs:
 
       - name: Sync to Gitee
         run: |
-          git remote add gitee https://al1:${{ secrets.GITEE_TOKEN }}@gitee.com/al1/gw2-boss-schedule.git
+          git remote add gitee https://al1:${{ secrets.GITEE_TOKEN }}@gitee.com/al1/${{ secrets.GITEE_REPO_NAME }}.git
           git push gitee master --force
