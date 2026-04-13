@@ -24,6 +24,8 @@ jobs:
           node-version: '22'
 
       - name: Generate README
+        env:
+          TZ: 'Asia/Shanghai'
         run: node generate-readme.js
 
       - name: Commit and Push to GitHub
