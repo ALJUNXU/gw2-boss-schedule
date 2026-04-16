@@ -133,20 +133,53 @@
         }
         .missed-item {
             background-color: #0f3460;
-            padding: 6px 10px;
+            padding: 4px 10px 4px 6px;
             border-radius: 3px;
             font-size: 15px;
             text-align: center;
             white-space: nowrap;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            transition: opacity 0.2s, background-color 0.2s;
+            user-select: none;
+        }
+        .missed-item:hover {
+            background-color: #1a4a80;
+        }
+        .missed-item.checked {
+            opacity: 0.45;
+            background-color: #1a3a20;
+        }
+        .missed-item.checked .boss-name {
+            text-decoration: line-through;
+        }
+        .missed-item input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            accent-color: #4cd137;
+            flex-shrink: 0;
+            margin: 0;
         }
         .permanent-missed {
             background-color: #3d1f00 !important;
             color: #ff6b35 !important;
             border: 1px solid #ff6b35;
         }
+        .permanent-missed.checked {
+            background-color: #2a1500 !important;
+        }
         .boss-purple {
             color: #c084fc !important;
             font-weight: bold;
+        }
+        .group-counter {
+            color: #4cd137;
+            font-size: 0.85rem;
+            margin-left: 4px;
+            font-weight: normal;
         }
         .footer {
             text-align: center;
@@ -183,7 +216,7 @@
                 <tbody id="scheduleBody"></tbody>
             </table>
 
-            <h2>❌ 本周未轮换到的BOSS</h2>
+            <h2>❌ 本周未轮换到的BOSS <button onclick="clearAllChecks()" style="font-size:0.8rem;padding:3px 10px;margin-left:8px;background-color:#555;">清除勾选</button></h2>
             <div class="missed-section" id="missedContainer"></div>
         </div>
 
@@ -349,6 +382,33 @@
             return {weekSchedule, groups, order};
         }
 
+        function getStorageKey(sundayDate) {
+            return 'gw2_checked_' + formatDateForInput(sundayDate);
+        }
+
+        function loadChecked(sundayDate) {
+            try {
+                const raw = localStorage.getItem(getStorageKey(sundayDate));
+                return raw ? JSON.parse(raw) : {};
+            } catch(e) { return {}; }
+        }
+
+        function saveChecked(sundayDate, checked) {
+            localStorage.setItem(getStorageKey(sundayDate), JSON.stringify(checked));
+        }
+
+        function clearAllChecks() {
+            const ipt = document.getElementById("sundayDate").value;
+            let sunday;
+            if(ipt){
+                sunday = parseLocalDate(ipt);
+            } else {
+                sunday = getCurrentWeekSunday();
+            }
+            saveChecked(sunday, {});
+            generateSchedule();
+        }
+
         function generateSchedule(){
             const ipt = document.getElementById("sundayDate").value;
             const err = document.getElementById("errorMsg");
@@ -371,6 +431,8 @@
             }
 
             const {weekSchedule, groups, order} = generateWeekSchedule(sunday);
+            const checkedMap = loadChecked(sunday);
+
             weekSchedule.forEach(day=>{
                 const tr = document.createElement("tr");
                 if(day.isToday) tr.classList.add("today");
@@ -387,7 +449,11 @@
 
                 const title = document.createElement("div");
                 title.className="line-title";
-                title.textContent=key;
+
+                // 计算本组勾选情况
+                const groupChecked = groups[key].filter(b => checkedMap[b.name]).length;
+                const groupTotal = groups[key].length;
+                title.innerHTML = `${key} <span class="group-counter">${groupChecked}/${groupTotal}</span>`;
                 div.appendChild(title);
 
                 // ✅ 横向排列容器
@@ -398,8 +464,47 @@
                     const item = document.createElement("div");
                     item.className="missed-item";
                     if(permanentMissedBosses.includes(b.name)) item.classList.add("permanent-missed");
-                    if(purpleBosses.includes(b.name)) item.classList.add("boss-purple");
-                    item.innerHTML = `${b.name}`;
+
+                    const isChecked = !!checkedMap[b.name];
+                    if(isChecked) item.classList.add("checked");
+
+                    const cb = document.createElement("input");
+                    cb.type = "checkbox";
+                    cb.checked = isChecked;
+                    cb.addEventListener('change', function() {
+                        const map = loadChecked(sunday);
+                        if(this.checked) {
+                            map[b.name] = true;
+                            item.classList.add("checked");
+                        } else {
+                            delete map[b.name];
+                            item.classList.remove("checked");
+                        }
+                        saveChecked(sunday, map);
+                        // 更新计数器
+                        const newChecked = groups[key].filter(x => {
+                            const m = loadChecked(sunday);
+                            return !!m[x.name];
+                        }).length;
+                        title.innerHTML = `${key} <span class="group-counter">${newChecked}/${groupTotal}</span>`;
+                    });
+
+                    const nameSpan = document.createElement("span");
+                    nameSpan.className = "boss-name";
+                    if(purpleBosses.includes(b.name)) nameSpan.classList.add("boss-purple");
+                    nameSpan.textContent = b.name;
+
+                    item.appendChild(cb);
+                    item.appendChild(nameSpan);
+
+                    // 点击标签也能切换checkbox
+                    item.addEventListener('click', function(e) {
+                        if(e.target !== cb) {
+                            cb.checked = !cb.checked;
+                            cb.dispatchEvent(new Event('change'));
+                        }
+                    });
+
                     group.appendChild(item);
                 });
 
